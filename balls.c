@@ -139,10 +139,8 @@ int main(int argc, char** argv) {
     struct balls bs = init(BALLS_LEN);
     while (1) {
         clear(buffer, width, height);
-        for (int i = 0; i < BALLS_LEN; i++) {
-            update(width, height, &bs);
-            render(buffer, width, height, &bs);
-        }
+        update(width, height, &bs);
+        render(buffer, width, height, &bs);
         draw(buffer, width, height);
     }
 }
