@@ -54,12 +54,6 @@ void update(const int w, const int h, struct balls* bs) {
     }
 }
 
-void clear(unsigned char* buffer, const int w, const int h) {
-    unsigned char* p = buffer;
-    while (p < buffer+w*h)
-        *p++ = 0;
-}
-
 void render(unsigned char* buffer, const int w, const int h, struct balls* bs) {
     const vec3 light = {.x=0.57735 , .y=-0.57735, .z=-0.57735}; // unit vector
     const int half_w = w/2;
@@ -138,8 +132,8 @@ int main(int argc, char** argv) {
 
     struct balls bs = init(BALLS_LEN);
     while (1) {
-        clear(buffer, width, height);
         update(width, height, &bs);
+        memset(buffer, 0, width*height);
         render(buffer, width, height, &bs);
         draw(buffer, width, height);
     }
