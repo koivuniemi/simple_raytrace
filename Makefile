@@ -1,2 +1,2 @@
 build:
-	gcc -g main.c -lm
+	gcc -O3 -o balls balls.c
