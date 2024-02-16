@@ -9,12 +9,14 @@
 #define Z_STEP 5
 #define BALLS_LEN 5
 
-const char c_map[]  = " .:-=+*%#@";
-const int c_map_len = sizeof(c_map) - 1;
+const unsigned char c_map[] = " .:-=+*%#@";
+const unsigned int c_map_len = sizeof(c_map) - 1;
 
 
 typedef struct {
-    float x, y, z;
+    float x;
+    float y;
+    float z;
 } vec3;
 
 struct balls {
@@ -60,20 +62,20 @@ void render(unsigned char* buffer, const int w, const int h, struct balls* bs) {
     const int half_h = h/2;
     float i, j, k;
     float r;
-    float normal;
+    float dot;
     unsigned int index;
     for (int b_i = 0; b_i < bs->len; b_i++) {
         for (int y = -half_h; y < half_h; y++) {
             for (int x = -half_w; x < half_w; x++) {
                 for (int z = 1; z < Z_LEN; z += Z_STEP) {
-                    i = x*z/w-bs->poss[b_i].x;
-                    j = y*z/w-bs->poss[b_i].y;
-                    k = z    -bs->poss[b_i].z;
+                    i = x*z/w - bs->poss[b_i].x;
+                    j = y*z/w - bs->poss[b_i].y;
+                    k = z     - bs->poss[b_i].z;
                     r = bs->sizes[b_i];
                     if (i*i+j*j+k*k < r*r) {
-                        normal = (i/r)*light.x+(j/r)*light.y+(k/r)*light.z;
                         index = x+half_w+(y+half_h)*w;
-                        buffer[index] = (unsigned int)((normal+1)/2*c_map_len);
+                        dot = (i*light.x+j*light.y+k*light.z)/r;
+                        buffer[index] = (unsigned int)((dot+1)/2*c_map_len);
                         break;
                     }
                 }
@@ -82,44 +84,24 @@ void render(unsigned char* buffer, const int w, const int h, struct balls* bs) {
     }
 }
 
-void draw(const unsigned char* buffer, const int w, const int h) {
-    static int sw = 0;
-    static int sh = 0;
+void draw(const unsigned char* buffer, const unsigned int len) {
+    static unsigned int old_len = 0;
+    static unsigned int str_len = 0;
     static unsigned char* str = NULL;
-    char need_realloc = 0;
-    if (sw < w) {
-        sw = w;
-        need_realloc = 1;
-    }
-    if (sh < h) {
-        sh = h;
-        need_realloc = 1;
-    }
-    if (need_realloc) {
-        int str_len = 2*sw * sh + sh;
-        str = realloc(str, sizeof(*str) * str_len + 1);
-        memset(str, ' ', sizeof(*str) * str_len);
-        for (int y = 0; y < sh; y++)
-            str[(2*w*(y+1) + y)] = '\n';
+    if (old_len < len) {
+        old_len = len;
+        str_len = len*2;
+        str = realloc(str, str_len+1+1); // + newline and null terminator
+        memset(str, ' ', str_len);
+        str[str_len-1] = '\n';
         str[str_len] = '\0';
     }
-    int str_i = 0;
-    int buffer_i;
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-            buffer_i = x+y*w;
-            if (buffer[buffer_i] == 0)
-                str[str_i] = ' ';
-            else
-                str[str_i] = c_map[buffer[buffer_i]];
-            str_i += 2;
-        }
-        str_i++;
-    }
+    for (int i = 0, str_i = 0; i < len; i++, str_i += 2)
+        str[str_i] = c_map[buffer[i]];
     printf("%s", str);
 }
 
-int main(int argc, char** argv) {
+int main(void) {
     srand(time(NULL));
 
     struct winsize w;
@@ -133,8 +115,8 @@ int main(int argc, char** argv) {
     struct balls bs = init(BALLS_LEN);
     while (1) {
         update(width, height, &bs);
-        memset(buffer, 0, width*height);
+        memset(buffer, 0, buffer_len);
         render(buffer, width, height, &bs);
-        draw(buffer, width, height);
+        draw(buffer, buffer_len);
     }
 }
